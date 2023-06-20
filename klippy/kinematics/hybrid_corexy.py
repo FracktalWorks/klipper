@@ -11,7 +11,6 @@ from . import idex_modes
 class HybridCoreXYKinematics:
     def __init__(self, toolhead, config):
         self.printer = config.get_printer()
-        printer_config = config.getsection('printer')
         # itersolve parameters
         self.rails = [ stepper.PrinterRail(config.getsection('stepper_x')),
                        stepper.LookupMultiRail(config.getsection('stepper_y')),
@@ -37,11 +36,13 @@ class HybridCoreXYKinematics:
             dc_rail_0 = idex_modes.DualCarriagesRail(
                 self.printer, self.rails[0], axis=0, active=True,
                 stepper_alloc_active=('corexy_stepper_alloc', b'-'),
-                stepper_alloc_inactive=('cartesian_reverse_stepper_alloc',b'y'))
+                stepper_alloc_inactive=('cartesian_reverse_stepper_alloc',b'y')
+                )
             dc_rail_1 = idex_modes.DualCarriagesRail(
                 self.printer, self.rails[3], axis=0, active=False,
                 stepper_alloc_active=('corexy_stepper_alloc', b'+'),
-                stepper_alloc_inactive=('cartesian_stepper_alloc', b'y'))
+                stepper_alloc_inactive=('cartesian_stepper_alloc', b'y'),
+                stepper_alloc_reverse=('corexy_reverse_stepper_alloc', b'-'))
             self.dc_module = idex_modes.DualCarriages(self.printer,
                         dc_rail_0, dc_rail_1, axis=0)
         for s in self.get_steppers():
@@ -66,11 +67,7 @@ class HybridCoreXYKinematics:
         else:
             return [pos[0] + pos[1], pos[1], pos[2]]
     def update_limits(self, i, range):
-        l, h = self.limits[i]
-        # Only update limits if this axis was already homed,
-        # otherwise leave in un-homed state.
-        if l <= h:
-            self.limits[i] = range
+        self.limits[i] = range
     def override_rail(self, i, rail):
         self.rails[i] = rail
     def set_position(self, newpos, homing_axes):

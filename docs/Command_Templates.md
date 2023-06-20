@@ -45,7 +45,8 @@ gcode:
   SET_PIN PIN=my_led VALUE=0
 ```
 
-The terminal will display the description when you use the `HELP` command or the autocomplete function.
+This will be showing is you use the `HELP` command or use the autocomplete
+function.
 
 ## Save/Restore state for G-Code moves
 
@@ -130,13 +131,17 @@ gcode:
 
 ### The "rawparams" variable
 
-The full unparsed parameters for the running macro can be access via the
-`rawparams` pseudo-variable.
+The full unparsed parameters for the running macro can be access via the `rawparams` pseudo-variable.
 
-Note that this will include any comments that were part of the original command.
+This is quite useful if you want to change the behavior of certain commands like the `M117`. For example:
 
-See the [sample-macros.cfg](../config/sample-macros.cfg) file for an example
-showing how to override the `M117` command using `rawparams`.
+```
+[gcode_macro M117]
+rename_existing: M117.1
+gcode:
+  M117.1 { rawparams }
+  M118 { rawparams }
+```
 
 ### The "printer" Variable
 
