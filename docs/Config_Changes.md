@@ -8,6 +8,101 @@ All dates in this document are approximate.
 
 ## Changes
 
+20230530: The default canbus frequency in "make menuconfig" is
+now 1000000. If using canbus and using canbus with some other
+frequency is required, then be sure to select "Enable extra low-level
+configuration options" and specify the desired "CAN bus speed" in
+"make menuconfig" when compiling and flashing the micro-controller.
+
+20230525: `SHAPER_CALIBRATE` command immediately applies input shaper
+parameters if `[input_shaper]` was enabled already.
+
+20230407: The `stalled_bytes` counter in the log and in the
+`printer.mcu.last_stats` field has been renamed to `upcoming_bytes`.
+
+20230323: On tmc5160 drivers `multistep_filt` is now enabled by default. Set
+`driver_MULTISTEP_FILT: False` in the tmc5160 config for the previous behavior.
+
+20230304: The `SET_TMC_CURRENT` command now properly adjusts the globalscaler
+register for drivers that have it. This removes a limitation where on tmc5160,
+the currents could not be raised higher with `SET_TMC_CURRENT` than the
+`run_current` value set in the config file.
+However, this has a side effect: After running `SET_TMC_CURRENT`, the stepper
+must be held at standstill for >130ms in case StealthChop2 is used so that the
+AT#1 calibration gets executed by the driver.
+
+20230202: The format of the `printer.screws_tilt_adjust` status
+information has changed. The information is now stored as a dictionary of
+screws with the resulting measurements. See the
+[status reference](Status_Reference.md#screws_tilt_adjust) for details.
+
+20230201:  The `[bed_mesh]` module no longer loads the `default` profile
+on startup.  It is recommended that users who use the `default` profile
+add `BED_MESH_PROFILE LOAD=default` to their `START_PRINT` macro (or
+to their slicer's "Start G-Code" configuration when applicable).
+
+20230103: It is now possible with the flash-sdcard.sh script to flash
+both variants of the Bigtreetech SKR-2, STM32F407 and STM32F429.
+This means that the original tag of btt-skr2 now has changed to either
+btt-skr-2-f407 or btt-skr-2-f429.
+
+20221128: Klipper v0.11.0 released.
+
+20221122: Previously, with safe_z_home, it was possible that the
+z_hop after the g28 homing would go in the negative z direction.
+Now, a z_hop is performed after g28 only if it results in a positive
+hop, mirroring the behavior of the z_hop that occurs before
+the g28 homing.
+
+20220616: It was previously possible to flash an rp2040 in bootloader
+mode by running `make flash FLASH_DEVICE=first`. The equivalent
+command is now `make flash FLASH_DEVICE=2e8a:0003`.
+
+20220612: The rp2040 micro-controller now has a workaround for the
+"rp2040-e5" USB errata. This should make initial USB connections more
+reliable. However, it may result in a change in behavior for the
+gpio15 pin. It is unlikely the gpio15 behavior change will be
+noticeable.
+
+20220407: The temperature_fan `pid_integral_max` config option has
+been removed (it was deprecated on 20210612).
+
+20220407: The default color order for pca9632 LEDs is now "RGBW". Add
+an explicit `color_order: RBGW` setting to the pca9632 config section
+to obtain the previous behavior.
+
+20220330: The format of the `printer.neopixel.color_data` status
+information for neopixel and dotstar modules has changed. The
+information is now stored as a list of color lists (instead of a list
+of dictionaries). See the [status reference](Status_Reference.md#led)
+for details.
+
+20220307: `M73` will no longer set print progress to 0 if `P` is missing.
+
+20220304: There is no longer a default for the `extruder` parameter of
+[extruder_stepper](Config_Reference.md#extruder_stepper) config
+sections. If desired, specify `extruder: extruder` explicitly to
+associate the stepper motor with the "extruder" motion queue at
+startup.
+
+20220210: The `SYNC_STEPPER_TO_EXTRUDER` command is deprecated; the
+`SET_EXTRUDER_STEP_DISTANCE` command is deprecated; the
+[extruder](Config_Reference.md#extruder) `shared_heater` config option
+is deprecated. These features will be removed in the near future.
+Replace `SET_EXTRUDER_STEP_DISTANCE` with
+`SET_EXTRUDER_ROTATION_DISTANCE`. Replace `SYNC_STEPPER_TO_EXTRUDER`
+with `SYNC_EXTRUDER_MOTION`. Replace extruder config sections using
+`shared_heater` with
+[extruder_stepper](Config_Reference.md#extruder_stepper) config
+sections and update any activation macros to use
+[SYNC_EXTRUDER_MOTION](G-Codes.md#sync_extruder_motion).
+
+20220116: The tmc2130, tmc2208, tmc2209, and tmc2660 `run_current`
+calculation code has changed. For some `run_current` settings the
+drivers may now be configured differently. This new configuration
+should be more accurate, but it may invalidate previous tmc driver
+tuning.
+
 20211230: Scripts to tune input shaper (`scripts/calibrate_shaper.py`
 and `scripts/graph_accelerometer.py`) were migrated to use Python3
 by default. As a result, users must install Python3 versions of certain
