@@ -117,6 +117,9 @@ console_sendf(const struct command_encoder *ce, va_list args)
 #define CANBUS_CMD_SET_KLIPPER_NODEID 0x01
 #define CANBUS_CMD_REQUEST_BOOTLOADER 0x02
 #define CANBUS_RESP_NEED_NODEID 0x20
+#define CANBUS_CMD_QUERY_DESCRIPTION 0x90
+#define CANBUS_RESP_DESC_MAINBOARD 0x92
+
 
 // Helper to verify a UUID in a command matches this chip's UUID
 static int
@@ -159,6 +162,7 @@ can_process_query_unassigned(struct canbus_msg *msg)
     }
 }
 
+
 static void
 can_id_conflict(void)
 {
@@ -191,6 +195,25 @@ can_process_request_bootloader(struct canbus_msg *msg)
     bootloader_request();
 }
 
+static void
+can_process_request_decription(struct canbus_msg *msg)
+{
+    if (CanData.assigned_id)
+        return;
+    struct canbus_msg send;
+    send.id = CANBUS_ID_ADMIN_RESP;
+    send.dlc = 8;
+    send.data[0] = CANBUS_CMD_QUERY_DESCRIPTION;
+    memcpy(&send.data[1], CanData.uuid, sizeof(CanData.uuid));
+    send.data[7] = CANBUS_RESP_DESC_MAINBOARD;
+    // Send with retry
+    for (;;) {
+        int ret = canbus_send(&send);
+        if (ret >= 0)
+            return;
+    }
+}
+
 // Handle an "admin" command
 static void
 can_process_admin(struct canbus_msg *msg)
@@ -206,6 +229,9 @@ can_process_admin(struct canbus_msg *msg)
         break;
     case CANBUS_CMD_REQUEST_BOOTLOADER:
         can_process_request_bootloader(msg);
+        break;
+    case CANBUS_CMD_QUERY_DESCRIPTION:
+        can_process_request_decription(msg);
         break;
     }
 }
