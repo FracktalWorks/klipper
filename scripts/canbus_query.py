@@ -12,9 +12,6 @@ CMD_QUERY_UNASSIGNED = 0x00
 RESP_NEED_NODEID = 0x20
 CMD_SET_KLIPPER_NODEID = 0x01
 CMD_SET_CANBOOT_NODEID = 0x11
-CMD_QUERY_DESCRIPTION = 0x90
-RESP_DESC_TOOLHEAD = 0x91
-RESP_DESC_MAINBOARD = 0x92
 
 def query_unassigned(canbus_iface):
     # Open CAN socket
@@ -24,7 +21,7 @@ def query_unassigned(canbus_iface):
                             bustype='socketcan')
     # Send query
     msg = can.Message(arbitration_id=CANBUS_ID_ADMIN,
-                      data=[CMD_QUERY_DESCRIPTION], is_extended_id=False)   #asks to send description of the node, not the uuid alone
+                      data=[CMD_QUERY_UNASSIGNED], is_extended_id=False)
     bus.send(msg)
     # Read responses
     found_ids = {}
@@ -36,7 +33,7 @@ def query_unassigned(canbus_iface):
         msg = bus.recv(tdiff)
         curtime = time.time()
         if (msg is None or msg.arbitration_id != CANBUS_ID_ADMIN + 1
-            or msg.dlc < 7 or msg.data[0] != CMD_QUERY_DESCRIPTION):
+            or msg.dlc < 7 or msg.data[0] != RESP_NEED_NODEID):
             continue
         uuid = sum([v << ((5-i)*8) for i, v in enumerate(msg.data[1:7])])
         if uuid in found_ids:
@@ -44,15 +41,13 @@ def query_unassigned(canbus_iface):
         found_ids[uuid] = 1
         AppNames = {
             CMD_SET_KLIPPER_NODEID: "Klipper",
-            CMD_SET_CANBOOT_NODEID: "CanBoot",
-            RESP_DESC_TOOLHEAD: "Toolhead",
-            RESP_DESC_MAINBOARD: "Mainboard"
+            CMD_SET_CANBOOT_NODEID: "CanBoot"
         }
         app_id = CMD_SET_KLIPPER_NODEID
         if msg.dlc > 7:
             app_id = msg.data[7]
         app_name = AppNames.get(app_id, "Unknown")
-        sys.stdout.write("Found canbus_uuid=%012x, Description: %s\n"
+        sys.stdout.write("Found canbus_uuid=%012x, Application: %s\n"
                          % (uuid, app_name))
     sys.stdout.write("Total %d uuids found\n" % (len(found_ids,)))
 
